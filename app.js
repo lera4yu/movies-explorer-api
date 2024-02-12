@@ -3,27 +3,18 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const { errors } = require('celebrate');
-const { rateLimit } = require('express-rate-limit');
-const { login, createUser } = require('./controllers/users');
-const auth = require('./middlewares/auth');
+const { limiter } = require('./middlewares/rateLimiter');
+const { getDbUrl } = require('./utils/config');
 const handleError = require('./middlewares/handleError');
-const NotFoundError = require('./errors/NotFoundError');
-const { validateSignUp, validateSignIn } = require('./middlewares/validation');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const router = require('./routes/index');
 
 const { PORT = 3000 } = process.env;
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-});
 
 const app = express();
 
 // подключаемся к серверу mongo
-mongoose.connect('mongodb://127.0.0.1:27017/bitfilmsdb');
+mongoose.connect(getDbUrl());
 
 app.use(helmet());
 
@@ -35,17 +26,7 @@ app.use(limiter);
 
 app.use(requestLogger);
 
-app.post('/signup', validateSignUp, createUser);
-
-app.post('/signin', validateSignIn, login);
-
-app.use(auth);
-
-app.use('/users', require('./routes/users'));
-
-app.use('/movies', require('./routes/movies'));
-
-app.use((req, res, next) => next(new NotFoundError('Страницы по данному URL не существует')));
+app.use(router);
 
 app.use(errorLogger);
 
