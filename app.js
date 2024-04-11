@@ -8,6 +8,7 @@ const { getDbUrl } = require('./utils/config');
 const handleError = require('./middlewares/handleError');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const router = require('./routes/index');
+const cors = require('cors');
 
 const { PORT = 3000 } = process.env;
 
@@ -17,6 +18,8 @@ const app = express();
 mongoose.connect(getDbUrl());
 
 app.use(helmet());
+
+app.use(cors());
 
 app.use(bodyParser.json());
 
